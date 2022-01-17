@@ -57,13 +57,13 @@ char *output_usb_buffer[ USB_INPUT_QUEUE_LEN ];
 
 char prompt[] = "\r\n> ";
 char info[]   = "WS2812B driver.\r\n\r\n";
-char help[]   = "led <LED number> <color> [ENTER]\r\n \
-			     - LED number from 1 to N\r\n \
-				 - color #RRGGBB using hex notation\r\n \
-				 example: led 3 #FF0000\r\n \
-				  - for red light led number 3 with maximum volume\r\n \
-				 example: led 1 off\r\n \
-				  - for turn off led 1\r\n\r\n";
+char help[]   = " led <LED number> <color> [ENTER]\r\n \
+ - LED number from 1 to N\r\n \
+ - color #RRGGBB using hex notation\r\n \
+example: led 3 #FF0000\r\n \
+ - for red light led number 3 with maximum volume\r\n \
+example: led 1 off\r\n \
+ - for turn off led 1\r\n\r\n";
 
 /* USER CODE END PV */
 
@@ -319,20 +319,75 @@ void welcome(void) {
 }
 
 void get_command(void) {
-	char *result = malloc( 256 * sizeof( char ));
-	strcpy( result, "" );
+	char *out_str;
+	char *result[ 5 ];
 	input_usb_buffer[ in_usb_buf_pos ] = 0;
-	char * token = strtok( input_usb_buffer, " " );
-    // loop through the string to extract all other tokens
-    while( token != NULL ) {
-	   strcat( result, token );
-	   strcat( result, "\r\n" );
-	   token = strtok( NULL, " " );
+	strcat( input_usb_buffer, " " );
+	char *token = strtok( input_usb_buffer, " " );
+    uint8_t loop = 0;
+	if( token != NULL ) {
+		while( token != NULL && loop < 5 ) {
+			result[ loop ] = malloc( strlen( token ) * sizeof( char ));
+			strcpy( result[ loop ], token );
+			loop++;
+		    token = strtok( NULL, " " );
+		}
+	}
+	else {
+		result[ 0 ] = malloc( strlen( input_usb_buffer ) * sizeof( char ));
+		strcpy( result[ 0 ], input_usb_buffer );
+		loop++;
+	}
+
+    if( strcmp( result[ 0 ], "help" ) == 0 || strcmp( result[ 0 ], "?" ) == 0 ) {
+    	out_str = malloc( strlen( help ) * sizeof( char ));
+    	strcpy( out_str, help );
+    	write_to_future_send_via_usb( out_str );
+    }
+    else if( strcmp( result[ 0 ], "on" ) == 0 ) {
+    	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET );
+    }
+    else if( strcmp( result[ 0 ], "off" ) == 0 ) {
+    	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET );
+    }
+    else if( strcmp( result[ 0 ], "toggle" ) == 0 ) {
+    	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13 );
+    }
+    else if( strcmp( result[ 0 ], "led" ) == 0 ) {
+    	if( loop >= 3 ) {
+    		uint16_t led_no = atoi( result[ 1 ]) - 1;
+    		uint32_t r = 0;
+    		uint32_t g = 0;
+    		uint32_t b = 0;
+    		if( strcmp( result[ 2 ], "off" ) == 0 ) {
+    			ws2812b_set_color( led_no, r, g, b );
+				ws2812b_update();
+    		}
+    		else if( result[ 2 ][ 0 ] == '#' && strlen( result[ 2 ]) >= 7 ) {
+        		char r_str[] = "0x00";
+    			r_str[ 2 ] = result[ 2 ][ 1 ];
+    			r_str[ 3 ] = result[ 2 ][ 2 ];
+    			sscanf( r_str, "%x", &r );
+        		char g_str[] = "0x00";
+    			g_str[ 2 ] = result[ 2 ][ 3 ];
+    			g_str[ 3 ] = result[ 2 ][ 4 ];
+    			sscanf( g_str, "%x", &g );
+        		char b_str[] = "0x00";
+    			b_str[ 2 ] = result[ 2 ][ 5 ];
+    			b_str[ 3 ] = result[ 2 ][ 6 ];
+    			sscanf( b_str, "%x", &b );
+    			ws2812b_set_color( led_no, r, g, b );
+			    ws2812b_update();
+    		}
+    	}
+    }
+
+    while( loop > 0 ) {
+    	loop--;
+    	free( result[ loop ]);
     }
 	in_usb_buf_pos = 0;
-	strcat( result, prompt );
-	write_to_future_send_via_usb( result );
-//	send_prompt();
+	send_prompt();
 }
 
 void send_queue_via_usb(void) {

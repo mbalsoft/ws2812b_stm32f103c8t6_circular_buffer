@@ -278,7 +278,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			input_usb_buffer[ in_usb_buf_pos++ ] = Buf[ loop ];
 		}
 		if( Buf[ loop ] == 13 ) {
+			input_usb_buffer[ in_usb_buf_pos - 1 ] = ' ';
 			enter = 1;
+			break;
 //			CDC_Transmit_FS( Buf, loop );
 //			get_command();
 //			start_pos = loop;
