@@ -303,7 +303,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void usb_transmit_fs( uint8_t *txBuf, uint32_t buf_len ) {
-	void wait_for_CDC_transmit_ready();
+	wait_for_CDC_transmit_ready();
 	CDC_Transmit_FS( txBuf, buf_len );
 //	while( CDC_Transmit_FS( txBuf, buf_len ) == USBD_BUSY ) { // USBD_OK
 //		HAL_Delay( 1 );
@@ -316,18 +316,28 @@ void welcome(void) {
 	strcpy( tmp_buf, info );
 	strcat( tmp_buf, prompt );
 	write_to_future_send_via_usb( tmp_buf );
-//	usb_transmit_fs( info, strlen( info ));
-//	usb_transmit_fs( prompt, strlen( prompt ));
 }
 
 void get_command(void) {
+	char *result = malloc( 256 * sizeof( char ));
+	strcpy( result, "" );
+	input_usb_buffer[ in_usb_buf_pos ] = 0;
+	char * token = strtok( input_usb_buffer, " " );
+    // loop through the string to extract all other tokens
+    while( token != NULL ) {
+	   strcat( result, token );
+	   strcat( result, "\r\n" );
+	   token = strtok( NULL, " " );
+    }
 	in_usb_buf_pos = 0;
-	usb_transmit_fs( prompt, strlen( prompt ));
+	strcat( result, prompt );
+	write_to_future_send_via_usb( result );
+//	send_prompt();
 }
 
 void send_queue_via_usb(void) {
 	for( uint8_t loop = 0; loop < USB_INPUT_QUEUE_LEN; loop++ ) {
-		if( output_usb_buffer[ loop ] && strlen( output_usb_buffer[ loop ]) > 0 ) {
+		if( output_usb_buffer[ loop ] != NULL && strlen( output_usb_buffer[ loop ]) > 0 ) {
 			usb_transmit_fs( output_usb_buffer[ loop ], strlen( output_usb_buffer[ loop ]));
 			free( output_usb_buffer[ loop ] );
 			output_usb_buffer[ loop ] = NULL;

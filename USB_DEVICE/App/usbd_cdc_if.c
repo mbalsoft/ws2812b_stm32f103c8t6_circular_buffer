@@ -272,20 +272,23 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
 
 //	uint32_t start_pos = 0;
-//	for( uint32_t loop = 0; loop < *Len; loop++ ) {
-//		if( in_usb_buf_pos < USB_BUFFER_LENGTH ) {
-//			input_usb_buffer[ in_usb_buf_pos++ ] = Buf[ loop ];
-//		}
-//		if( Buf[ loop ] == 13 ) {
+	uint8_t  enter = 0;
+	for( uint32_t loop = 0; loop < *Len; loop++ ) {
+		if( in_usb_buf_pos < USB_BUFFER_LENGTH ) {
+			input_usb_buffer[ in_usb_buf_pos++ ] = Buf[ loop ];
+		}
+		if( Buf[ loop ] == 13 ) {
+			enter = 1;
 //			CDC_Transmit_FS( Buf, loop );
 //			get_command();
 //			start_pos = loop;
-//		}
-//	}
+		}
+	}
 //	for( uint32_t loop = 0; loop < *Len - start_pos; loop ++ ) {
 //		Buf[ loop ] = Buf[ loop + start_pos ];
 //	}
 //	CDC_Transmit_FS( Buf, *Len - start_pos );
+
 	uint8_t *out_buf;
 	out_buf = malloc(*Len * sizeof( uint8_t ));
 	uint32_t out_buf_len = 0;
@@ -297,9 +300,12 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	usb_transmit_fs( out_buf, out_buf_len );
 	free( out_buf );
-	if( Buf[ 0 ] == '\r' ) {
-		send_prompt();
+	if( enter > 0 ) {
+		get_command();
 	}
+//	if( Buf[ 0 ] == '\r' ) {
+//		send_prompt();
+//	}
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
