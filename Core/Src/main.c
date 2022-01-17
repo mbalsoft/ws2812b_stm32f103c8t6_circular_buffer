@@ -121,6 +121,10 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
+  for( uint8_t loop = 0; loop < USB_INPUT_QUEUE_LEN; loop++ ) {
+	  output_usb_buffer[ loop ] = NULL;
+  }
+
   ws2812b_init();
 
   srand( (unsigned) time( NULL ));
@@ -329,22 +333,12 @@ void send_queue_via_usb(void) {
 			output_usb_buffer[ loop ] = NULL;
 		}
 	}
-//	if( output_usb_buffer1 && strlen( output_usb_buffer1 ) > 0 ) {
-//		usb_transmit_fs( output_usb_buffer1, strlen( output_usb_buffer1 ));
-//		free( output_usb_buffer1 );
-//		output_usb_buffer1 = NULL;
-//	}
-//	if( output_usb_buffer2 && strlen( output_usb_buffer2 ) > 0 ) {
-//		usb_transmit_fs( output_usb_buffer2, strlen( output_usb_buffer2 ));
-//		free( output_usb_buffer2 );
-//		output_usb_buffer2 = NULL;
-//	}
 }
 
 void write_to_future_send_via_usb( char *text_to_send ) {
 	uint8_t loop = 0;
 
-	while( loop < USB_INPUT_QUEUE_LEN && output_usb_buffer ) {
+	while( loop < USB_INPUT_QUEUE_LEN && output_usb_buffer[ loop ] != NULL ) {
 		loop++;
 	}
 	if( loop < USB_INPUT_QUEUE_LEN ) {
