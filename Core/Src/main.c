@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdio.h>
 #include <stdlib.h>
 
 /* USER CODE END Includes */
@@ -64,6 +65,8 @@ example: led 3 #FF0000\r\n \
  - for red light led number 3 with maximum volume\r\n \
 example: led 1 off\r\n \
  - for turn off led 1\r\n\r\n";
+
+uint8_t effect_on_off = 0;
 
 /* USER CODE END PV */
 
@@ -133,20 +136,44 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  int counter = 0;
+  int led_loop = 0;
+  uint16_t volume = 128; // max 256
+  uint8_t r = gamma8[ rand() % volume ];
+  uint8_t g = gamma8[ rand() % volume ];
+  uint8_t b = gamma8[ rand() % volume ];
+
   while (1)
   {
+//	    uint16_t volume = 128; // max 256
+//	  	uint8_t r = gamma8[ rand() % volume ];
+//	  	uint8_t g = gamma8[ rand() % volume ];
+//	  	uint8_t b = gamma8[ rand() % volume ];
+//
+//	  	for( int led = 0; led < LED_N; led++ ) {
+//	  	  ws2812b_set_color( led, r, g, b );
+//	  	  ws2812b_update();
+//	  	  HAL_Delay( 100 );
+//	  	}
 
-	uint16_t volume = 128; // max 256
-	uint8_t r = gamma8[ rand() % volume ];
-	uint8_t g = gamma8[ rand() % volume ];
-	uint8_t b = gamma8[ rand() % volume ];
+	send_queue_via_usb();
+	HAL_Delay( 1 );
 
-	for( int led = 0; led < LED_N; led++ ) {
-	  ws2812b_set_color( led, r, g, b );
-	  ws2812b_update();
-	  send_queue_via_usb();
-	  HAL_Delay( 100 );
+	counter++;
+	if( counter >= 100 && effect_on_off ) {
+		counter = 0;
+		led_loop++;
+		if( led_loop >= LED_N ) {
+			led_loop = 0;
+			r = gamma8[ rand() % volume ];
+			g = gamma8[ rand() % volume ];
+			b = gamma8[ rand() % volume ];
+		}
+		ws2812b_set_color( led_loop, r, g, b );
+		ws2812b_update();
 	}
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -362,6 +389,10 @@ void get_command(void) {
     		if( strcmp( result[ 2 ], "off" ) == 0 ) {
     			ws2812b_set_color( led_no, r, g, b );
 				ws2812b_update();
+				out_str = malloc( 50 * sizeof( char ));
+//				spritnf( out_str, "LED %d\nR = %d\nG = %d\nB = %d\n", led_no, r, g, b );
+				strcpy( out_str, "OK" );
+				write_to_future_send_via_usb( out_str );
     		}
     		else if( result[ 2 ][ 0 ] == '#' && strlen( result[ 2 ]) >= 7 ) {
         		char r_str[] = "0x00";
@@ -378,8 +409,26 @@ void get_command(void) {
     			sscanf( b_str, "%x", &b );
     			ws2812b_set_color( led_no, r, g, b );
 			    ws2812b_update();
+			    out_str = malloc( 50 * sizeof( char ));
+//				spritnf( out_str, "LED %d\nR = %d\nG = %d\nB = %d\n", led_no, r, g, b );
+				strcpy( out_str, "OK" );
+				write_to_future_send_via_usb( out_str );
+    		}
+    		else if( loop >= 5 ) {
+    			r = atoi( result[ 2 ]);
+    			g = atoi( result[ 3 ]);
+    			b = atoi( result[ 4 ]);
+        		ws2812b_set_color( led_no, r, g, b );
+    			ws2812b_update();
+    			out_str = malloc( 50 * sizeof( char ));
+//				spritnf( out_str, "LED %d\nR = %d\nG = %d\nB = %d\n", led_no, r, g, b );
+				strcpy( out_str, "OK" );
+				write_to_future_send_via_usb( out_str );
     		}
     	}
+    }
+    else if( strcmp( result[ 0 ], "effect" ) == 0 ) {
+    	effect_on_off = ! effect_on_off;
     }
 
     while( loop > 0 ) {
