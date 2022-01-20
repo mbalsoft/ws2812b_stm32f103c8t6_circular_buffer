@@ -57,7 +57,7 @@ uint16_t in_usb_buf_pos = 0;
 char *output_usb_buffer[ USB_INPUT_QUEUE_LEN ];
 
 char prompt[] = "\r\n> ";
-char info[]   = "WS2812B driver.\r\n\r\n";
+char info[]   = "WS2812B driver.\r\n";
 char help[]   = " led <LED number> <color> [ENTER]\r\n \
  - LED number from 1 to N\r\n \
  - color #RRGGBB using hex notation\r\n \
@@ -67,6 +67,7 @@ example: led 1 off\r\n \
  - for turn off led 1\r\n\r\n";
 
 uint8_t  effect_on_off = 0;
+uint8_t  welcome_cnt = 0;
 uint16_t counter = 0;
 uint16_t led_loop = 0;
 
@@ -85,6 +86,8 @@ void get_command(void);
 void send_queue_via_usb(void);
 void write_to_future_send_via_usb( char *text_to_send );
 void send_prompt(void);
+void print_to_usb( uint8_t x );
+void print_str_to_usb( char *str );
 
 /* USER CODE END PFP */
 
@@ -328,6 +331,14 @@ void usb_transmit_fs( uint8_t *txBuf, uint32_t buf_len ) {
 }
 
 void welcome(void) {
+	if( welcome_cnt & 0x01 == 1 ) {
+		welcome_cnt = 0;
+		return;
+	}
+	welcome_cnt++;
+	for( uint8_t loop = 0; loop < USB_INPUT_QUEUE_LEN; loop++ ) {
+		if( output_usb_buffer[ loop ] != NULL ) return;
+	}
 	char *tmp_buf;
 	tmp_buf = malloc( (strlen( info ) + strlen( prompt )) * sizeof( char ));
 	strcpy( tmp_buf, info );
@@ -465,6 +476,22 @@ void send_prompt(void) {
 	char *tmp_buf;
 	tmp_buf = malloc( strlen( prompt ) * sizeof( char ));
 	strcpy( tmp_buf, prompt );
+	write_to_future_send_via_usb( tmp_buf );
+}
+
+void print_to_usb( uint8_t x ) {
+	char *tmp_buf;
+	tmp_buf = malloc( strlen( prompt ) * sizeof( char ));
+	itoa( x, tmp_buf, 10 );
+	strcat( tmp_buf, "\r\n" );
+	write_to_future_send_via_usb( tmp_buf );
+}
+
+void print_str_to_usb( char *str ) {
+	char *tmp_buf;
+	tmp_buf = malloc( strlen( prompt ) * sizeof( char ));
+	strcpy( tmp_buf, str );
+	strcat( tmp_buf, "\r\n" );
 	write_to_future_send_via_usb( tmp_buf );
 }
 

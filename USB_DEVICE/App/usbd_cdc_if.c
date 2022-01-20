@@ -160,9 +160,9 @@ static int8_t CDC_Init_FS(void)
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
 
-  if( hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED ) {
-	  welcome();
-  }
+//  if( hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED ) {
+//	  welcome();
+//  }
 
   return (USBD_OK);
   /* USER CODE END 3 */
@@ -233,10 +233,13 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
     case CDC_GET_LINE_CODING:
+//    	    		print_to_usb( cmd );
+//    	    		print_str_to_usb( pbuf );
 
     break;
 
     case CDC_SET_CONTROL_LINE_STATE:
+    		welcome();
 
     break;
 
