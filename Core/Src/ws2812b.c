@@ -74,16 +74,24 @@ void ws2812b_dma_interupt(void) {
 		busy_indicator = 0;
 	}
 	else if( led_counter == LED_N ) {
-		for( uint8_t loop = 0; loop < CIRCULAR_LEN; loop++ ) {
-			circular_buffer[ loop ] = 90;
+		if( (led_counter & 0x01) == 0 ) {
+			for( uint8_t loop = 0; loop < (CIRCULAR_LEN >> 1); loop++ ) {
+				circular_buffer[ loop ] = 90;
+			}
 		}
+		else {
+			for( uint8_t loop = (CIRCULAR_LEN >> 1); loop < CIRCULAR_LEN; loop++ ) {
+				circular_buffer[ loop ] = 90;
+			}
+		}
+
 	}
 	else {
 		if( (led_counter & 0x01) == 0 ) {
 			copy24bit_to_24byte( ws2812b_array + (led_counter * 3), circular_buffer + 0 );
 		}
 		else {
-			copy24bit_to_24byte( ws2812b_array + (led_counter * 3), circular_buffer + 24 );
+			copy24bit_to_24byte( ws2812b_array + (led_counter * 3), circular_buffer + (CIRCULAR_LEN >> 1));
 		}
 	}
 	led_counter++;

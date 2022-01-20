@@ -13,7 +13,7 @@ void ws2812b_dma_interupt(void);
 void clear_led_data(void);
 
 
-#define LED_N			9
+#define LED_N			8
 
 
 TIM_HandleTypeDef htim3;

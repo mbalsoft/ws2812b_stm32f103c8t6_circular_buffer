@@ -68,6 +68,7 @@ example: led 1 off\r\n \
 
 uint8_t  effect_on_off = 0;
 uint16_t counter = 0;
+uint16_t led_loop = 0;
 
 /* USER CODE END PV */
 
@@ -138,7 +139,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  int led_loop = 0;
   uint16_t volume = 128; // max 256
   uint8_t r = gamma8[ rand() % volume ];
   uint8_t g = gamma8[ rand() % volume ];
@@ -153,7 +153,6 @@ int main(void)
 	if( effect_on_off ) counter++;
 	if( counter >= 100 && effect_on_off ) {
 		counter = 0;
-		led_loop++;
 		if( led_loop >= LED_N ) {
 			led_loop = 0;
 			r = gamma8[ rand() % volume ];
@@ -162,6 +161,7 @@ int main(void)
 		}
 		ws2812b_set_color( led_loop, r, g, b );
 		ws2812b_update();
+		led_loop++;
 	}
 
     /* USER CODE END WHILE */
@@ -419,7 +419,10 @@ void get_command(void) {
     }
     else if( strcmp( result[ 0 ], "effect" ) == 0 ) {
     	effect_on_off = ! effect_on_off;
-    	if( ! effect_on_off ) counter = 0;
+    	if( ! effect_on_off ) {
+    		counter  = 0;
+    		led_loop = 0;
+    	}
     }
     else if( strcmp( result[ 0 ], "turn" ) == 0 && strcmp( result[ 1 ], "off" ) == 0 ) {
     	clear_led_data();
