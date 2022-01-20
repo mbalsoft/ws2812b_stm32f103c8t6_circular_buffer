@@ -66,9 +66,8 @@ example: led 3 #FF0000\r\n \
 example: led 1 off\r\n \
  - for turn off led 1\r\n\r\n";
 
-uint8_t effect_on_off = 0;
-
-uint16_t interrupt_counter = 0;
+uint8_t  effect_on_off = 0;
+uint16_t counter = 0;
 
 /* USER CODE END PV */
 
@@ -85,7 +84,6 @@ void get_command(void);
 void send_queue_via_usb(void);
 void write_to_future_send_via_usb( char *text_to_send );
 void send_prompt(void);
-void inc_ic(void);
 
 /* USER CODE END PFP */
 
@@ -140,7 +138,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  int counter = 0;
   int led_loop = 0;
   uint16_t volume = 128; // max 256
   uint8_t r = gamma8[ rand() % volume ];
@@ -153,7 +150,7 @@ int main(void)
 	send_queue_via_usb();
 	HAL_Delay( 1 );
 
-	counter++;
+	if( effect_on_off ) counter++;
 	if( counter >= 100 && effect_on_off ) {
 		counter = 0;
 		led_loop++;
@@ -381,13 +378,10 @@ void get_command(void) {
     		uint32_t b = 0;
     		if( strcmp( result[ 2 ], "off" ) == 0 ) {
     			ws2812b_set_color( led_no, r, g, b );
-    			interrupt_counter = 0;
 				ws2812b_update();
 				out_str = malloc( 50 * sizeof( char ));
 //				spritnf( out_str, "LED %d\nR = %d\nG = %d\nB = %d\n", led_no, r, g, b );
-//				strcpy( out_str, "OK " );
-				itoa( interrupt_counter, out_str, 10 );
-				strcat( out_str, " OK" );
+				strcpy( out_str, "OK " );
 				write_to_future_send_via_usb( out_str );
     		}
     		else if( result[ 2 ][ 0 ] == '#' && strlen( result[ 2 ]) >= 7 ) {
@@ -411,23 +405,28 @@ void get_command(void) {
 				write_to_future_send_via_usb( out_str );
     		}
     		else if( loop >= 5 ) {
-    			out_str = malloc( 50 * sizeof( char ));
-    			itoa( interrupt_counter, out_str, 10 );
     			r = atoi( result[ 2 ]);
     			g = atoi( result[ 3 ]);
     			b = atoi( result[ 4 ]);
         		ws2812b_set_color( led_no, r, g, b );
     			ws2812b_update();
+    			out_str = malloc( 50 * sizeof( char ));
 //				spritnf( out_str, "LED %d\nR = %d\nG = %d\nB = %d\n", led_no, r, g, b );
-//				strcpy( out_str, "OK" );
-//				itoa( interrupt_counter, out_str, 10 );
-				strcat( out_str, " OK" );
+				strcpy( out_str, "OK" );
 				write_to_future_send_via_usb( out_str );
     		}
     	}
     }
     else if( strcmp( result[ 0 ], "effect" ) == 0 ) {
     	effect_on_off = ! effect_on_off;
+    	if( ! effect_on_off ) counter = 0;
+    }
+    else if( strcmp( result[ 0 ], "turn" ) == 0 && strcmp( result[ 1 ], "off" ) == 0 ) {
+    	clear_led_data();
+    	ws2812b_update();
+    	out_str = malloc( 50 * sizeof( char ));
+		strcpy( out_str, "all LED's turn OFF" );
+		write_to_future_send_via_usb( out_str );
     }
 
     while( loop > 0 ) {
@@ -464,12 +463,6 @@ void send_prompt(void) {
 	tmp_buf = malloc( strlen( prompt ) * sizeof( char ));
 	strcpy( tmp_buf, prompt );
 	write_to_future_send_via_usb( tmp_buf );
-}
-
-void inc_ic(void) {
-	if( interrupt_counter == 0 ) {
-		interrupt_counter = __HAL_DMA_GET_COUNTER( &hdma_tim3_ch1_trig );
-	}
 }
 
 /* USER CODE END 4 */

@@ -8,9 +8,9 @@ void ws2812b_set_color(uint32_t led, uint8_t red, uint8_t green, uint8_t blue);
 
 void ws2812b_update(void);
 
-//void ws2812b_wait(void);
-
 void ws2812b_dma_interupt(void);
+
+void clear_led_data(void);
 
 
 #define LED_N			9

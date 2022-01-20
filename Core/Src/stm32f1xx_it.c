@@ -206,7 +206,7 @@ void DMA1_Channel6_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Channel6_IRQn 0 */
 
-	inc_ic();
+//	__HAL_DMA_GET_COUNTER( &hdma_tim3_ch1_trig );
 	ws2812b_dma_interupt();
 
   /* USER CODE END DMA1_Channel6_IRQn 0 */

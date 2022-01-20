@@ -1,5 +1,6 @@
-ws2812b.c:90:6:copy24bit_to_24byte	24	static
-ws2812b.c:106:6:ws2812b_set_color	16	static
-ws2812b.c:116:6:ws2812b_update	16	static
-ws2812b.c:126:6:ws2812b_dma_interupt	16	static
-ws2812b.c:147:6:ws2812b_init	16	static
+ws2812b.c:35:6:copy24bit_to_24byte	24	static
+ws2812b.c:51:6:ws2812b_set_color	16	static
+ws2812b.c:61:6:ws2812b_update	16	static
+ws2812b.c:71:6:ws2812b_dma_interupt	16	static
+ws2812b.c:92:6:ws2812b_init	16	static
+ws2812b.c:101:6:clear_led_data	16	static
