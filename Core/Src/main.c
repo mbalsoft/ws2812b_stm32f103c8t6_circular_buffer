@@ -479,6 +479,7 @@ void send_prompt(void) {
 	write_to_future_send_via_usb( tmp_buf );
 }
 
+
 void print_to_usb( uint8_t x ) {
 	char *tmp_buf;
 	tmp_buf = malloc( strlen( prompt ) * sizeof( char ));
