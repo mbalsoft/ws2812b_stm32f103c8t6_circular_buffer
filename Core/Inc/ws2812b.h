@@ -8,12 +8,16 @@ void ws2812b_set_color(uint32_t led, uint8_t red, uint8_t green, uint8_t blue);
 
 void ws2812b_update(void);
 
-void ws2812b_wait(void);
+//void ws2812b_wait(void);
+
+void ws2812b_dma_interupt(void);
 
 
-#define LED_N			8
+#define LED_N			9
 
 
 TIM_HandleTypeDef htim3;
 
 const uint8_t gamma8[];
+
+static uint8_t busy_indicator;

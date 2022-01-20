@@ -4,8 +4,9 @@
 #define BIT_0_TIME		32
 #define BIT_1_TIME		64
 
-#define RESET_LEN		48
+//#define RESET_LEN		48
 //#define LED_N			8
+#define CIRCULAR_LEN    48
 
 
 const uint8_t gamma8[] = {
@@ -27,55 +28,127 @@ const uint8_t gamma8[] = {
   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
 
 
-static uint8_t led_buffer[RESET_LEN + 24 * LED_N + 1];
+//static uint8_t led_buffer[RESET_LEN + 24 * LED_N + 1];
 
-void ws2812b_init(void)
+static uint8_t circular_buffer[ CIRCULAR_LEN ];
+static uint8_t ws2812b_array[ 3 * LED_N ];
+uint16_t led_counter = 0;
+
+
+//void ws2812b_init(void)
+//{
+//  int i;
+//  for (i = 0; i < RESET_LEN; i++)
+//    led_buffer[i] = 0;
+//
+//  for (i = 0; i < 24 * LED_N; i++)
+//    led_buffer[RESET_LEN + i] = BIT_0_TIME;
+//
+//  led_buffer[RESET_LEN + 24 * LED_N] = 90; //100;
+//
+//  HAL_TIM_Base_Start(&htim3);
+//  ws2812b_update();
+//}
+
+//void ws2812b_update(void)
+//{
+//	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)led_buffer, sizeof(led_buffer));
+//}
+
+//void ws2812b_wait(void)
+//{
+//	while (HAL_TIM_GetChannelState(&htim3, TIM_CHANNEL_1) == HAL_TIM_CHANNEL_STATE_BUSY)
+//		{}
+//}
+
+//static void set_byte(uint32_t pos, uint8_t value)
+//{
+//  int i;
+//  for (i = 0; i < 8; i++) {
+//    if (value & 0x80) {
+//      led_buffer[pos + i] = BIT_1_TIME;
+//    } else {
+//      led_buffer[pos + i] = BIT_0_TIME;
+//    }
+//
+//    value <<= 1;
+//  }
+//}
+
+//void ws2812b_set_color(uint32_t led, uint8_t red, uint8_t green, uint8_t blue)
+//{
+//	if (led < LED_N)
+//	{
+//		set_byte(RESET_LEN + 24 * led, green);
+//		set_byte(RESET_LEN + 24 * led + 8, red);
+//		set_byte(RESET_LEN + 24 * led + 16, blue);
+//	}
+//}
+
+// ============================================================================================
+
+void copy24bit_to_24byte( uint8_t *buf3byte, uint8_t *buf24byte ) {
+	uint8_t value;
+	for( uint8_t loop3byte = 0; loop3byte < 3; loop3byte++ ) {
+		value = buf3byte[ loop3byte ];
+		for( uint8_t loop24byte = 0; loop24byte < 8; loop24byte++ ) {
+			if (value & 0x80) {
+				buf24byte[ (loop3byte * 8) + loop24byte ] = BIT_1_TIME;
+			}
+			else {
+				buf24byte[ (loop3byte * 8) + loop24byte ] = BIT_0_TIME;
+			}
+			value <<= 1;
+		}
+	}
+}
+
+void ws2812b_set_color( uint32_t led, uint8_t red, uint8_t green, uint8_t blue )
 {
-  int i;
-  for (i = 0; i < RESET_LEN; i++)
-    led_buffer[i] = 0;
-
-  for (i = 0; i < 24 * LED_N; i++)
-    led_buffer[RESET_LEN + i] = BIT_0_TIME;
-
-  led_buffer[RESET_LEN + 24 * LED_N] = 90; //100;
-
-  HAL_TIM_Base_Start(&htim3);
-  ws2812b_update();
+	if( led < LED_N )
+	{
+		ws2812b_array[ 3 * led + 0 ] = green;
+		ws2812b_array[ 3 * led + 1 ] = red;
+		ws2812b_array[ 3 * led + 2 ] = blue;
+	}
 }
 
 void ws2812b_update(void)
 {
-	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)led_buffer, sizeof(led_buffer));
-}
-
-void ws2812b_wait(void)
-{
-	while (HAL_TIM_GetChannelState(&htim3, TIM_CHANNEL_1) == HAL_TIM_CHANNEL_STATE_BUSY)
-		{}
-}
-
-static void set_byte(uint32_t pos, uint8_t value)
-{
-  int i;
-  for (i = 0; i < 8; i++) {
-    if (value & 0x80) {
-      led_buffer[pos + i] = BIT_1_TIME;
-    } else {
-      led_buffer[pos + i] = BIT_0_TIME;
-    }
-
-    value <<= 1;
-  }
-}
-
-void ws2812b_set_color(uint32_t led, uint8_t red, uint8_t green, uint8_t blue)
-{
-	if (led < LED_N)
-	{
-		set_byte(RESET_LEN + 24 * led, green);
-		set_byte(RESET_LEN + 24 * led + 8, red);
-		set_byte(RESET_LEN + 24 * led + 16, blue);
+	busy_indicator = 1;
+	led_counter = 0;
+	for( uint8_t loop = 0; loop < CIRCULAR_LEN; loop++ ) {
+		circular_buffer[ loop ] = 0;
 	}
+	HAL_TIM_PWM_Start_DMA( &htim3, TIM_CHANNEL_1, (uint32_t*) circular_buffer, sizeof( circular_buffer ));
 }
 
+void ws2812b_dma_interupt(void) {
+	if( led_counter > LED_N ) {
+		HAL_TIM_PWM_Stop_DMA( &htim3, TIM_CHANNEL_1 );
+		busy_indicator = 0;
+	}
+	else if( led_counter == LED_N ) {
+		for( uint8_t loop = 0; loop < CIRCULAR_LEN; loop++ ) {
+			circular_buffer[ loop ] = 90;
+		}
+	}
+	else {
+		if( (led_counter & 0x01) == 0 ) {
+			copy24bit_to_24byte( ws2812b_array + (led_counter * 3), circular_buffer + 0 );
+		}
+		else {
+			copy24bit_to_24byte( ws2812b_array + (led_counter * 3), circular_buffer + 24 );
+		}
+	}
+	led_counter++;
+}
+
+void ws2812b_init(void)
+{
+  for( uint16_t loop = 0; loop < 3 * LED_N; loop++ )
+	  ws2812b_array[ loop ] = BIT_0_TIME;
+
+  HAL_TIM_Base_Start( &htim3 );
+  ws2812b_update();
+}
