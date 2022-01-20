@@ -1,4 +1,4 @@
-# WS2812B and STM32F103C8 very simple project
+# WS2812B and STM32F103C8 using TIM3, DMA and crcular buffer
 
 STM32F103C8 use TIM3 for generate serial data for 8 diodes WS2812B
 For save memory DMA use 48 bytes length circular buffer
@@ -38,7 +38,9 @@ led <LED number> <color>
 effect - switch - turn on/off random effect
 turn off - turn off all LED's
 
-
-
-
+Project was tested usig 8 WS2812B.
+In file ws2812b.h is definition 
+#define LED_N 8
+it is possible to set number of LED's in chain.
+Theoriticaly up ~4000 but I've no that long tape :-)
 
